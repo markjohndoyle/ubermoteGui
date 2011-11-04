@@ -4,6 +4,7 @@ import org.croc.ubermote.GenericActionInvocationCallback;
 import org.croc.ubermote.UpnpScanner;
 import org.croc.ubermote.model.ArgumentValueConstruct;
 import org.croc.ubermote.model.DeviceModel;
+import org.croc.ubermotegui.control.RemoteControl;
 import org.eclipse.core.databinding.DataBindingContext;
 import org.eclipse.core.databinding.beans.BeansObservables;
 import org.eclipse.core.databinding.beans.PojoObservables;
@@ -37,7 +38,6 @@ import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.teleal.cling.model.action.ActionInvocation;
 import org.teleal.cling.model.meta.Action;
-import org.teleal.cling.model.meta.ActionArgument;
 import org.teleal.cling.model.meta.ActionArgument.Direction;
 import org.teleal.cling.model.meta.RemoteDevice;
 import org.teleal.cling.model.meta.RemoteService;
@@ -48,7 +48,7 @@ public class MainApp {
 	protected Shell shell;
 
 	private DeviceModel model = new DeviceModel();
-	private UpnpScanner upnpSCanner = new UpnpScanner(model);
+	private UpnpScanner upnpScanner = new UpnpScanner(model);
 	private List listDevices;
 	private ListViewer listViewerDevices;
 	private ListViewer listViewerServices;
@@ -102,11 +102,11 @@ public class MainApp {
 		composite.setLayout(new GridLayout(1, false));
 
 		Composite composite_1 = new Composite(composite, SWT.NONE);
-		composite_1.setLayout(new GridLayout(1, false));
+		composite_1.setLayout(new GridLayout(2, false));
 		composite_1.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
 
 		SashForm sashForm = new SashForm(composite_1, SWT.NONE);
-		sashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+		sashForm.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 2, 1));
 
 		listViewerDevices = new ListViewer(sashForm, SWT.BORDER | SWT.V_SCROLL);
 		listDevices = listViewerDevices.getList();
@@ -156,7 +156,7 @@ public class MainApp {
 							actionInvocation.setInput(argVal.getArgument().getName(), argVal.getValue());
 						}
 					}
-					MainApp.this.upnpSCanner.getUpnpService().getControlPoint().execute(new GenericActionInvocationCallback(actionInvocation));
+					MainApp.this.upnpScanner.getUpnpService().getControlPoint().execute(new GenericActionInvocationCallback(actionInvocation));
 				}
 			}
 		});
@@ -167,10 +167,14 @@ public class MainApp {
 		scanButton.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(SelectionEvent e) {
-				MainApp.this.upnpSCanner.scan();
+				MainApp.this.upnpScanner.scan();
 			}
 		});
 		scanButton.setText("scan");
+		// Component creation
+		final Button btnRemote = new Button(composite_1, SWT.NONE);
+		btnRemote.addSelectionListener(new BtnRemoteSelectionListener());
+		btnRemote.setText("Remote");
 
 		Menu menu = new Menu(shell, SWT.BAR);
 		shell.setMenuBar(menu);
@@ -213,5 +217,15 @@ public class MainApp {
 		listViewerActions.setInput(listViewerServicesDeviceObserveDetailList);
 		//
 		return bindingContext;
+	}
+	
+	
+	private class BtnRemoteSelectionListener extends SelectionAdapter {
+		@Override
+		public void widgetSelected(SelectionEvent e) {
+			IStructuredSelection selection = (IStructuredSelection)MainApp.this.listViewerDevices.getSelection();
+			RemoteDevice selectedDevice = (RemoteDevice) selection.getFirstElement();
+			new RemoteControl(MainApp.this.shell, MainApp.this.upnpScanner, selectedDevice).open();
+		}
 	}
 }
